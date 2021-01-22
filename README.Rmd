@@ -1,0 +1,94 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# renojouet
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of renojouet is to ...
+
+## Installation
+
+You can install the released version of renojouet from github
+
+``` r
+devtools::install_github("SimonCoulombe/renojouet")
+```
+
+## Data
+
+The main data of this package are  the `clients` and  `donateurs` (donators) tibbles.  They respectively contain the code_postal (postal codes) of 1022 clients and 191 donators to a non-profit toy store in Quebec city, Réno-Jouets. 
+
+Some additional ground work has been done to make the data easier to use:  
+-  `renojouet_adresse` is a text string of the store's address ("2699 Avenue Watt, Québec, QC G1P 3X3"),  
+-  `renojouet_location` is a  sf data.frame  with the store location as a point, geocoded using hereR geocoding api (-71.30531 46.78629),  
+-  `geocoded_code_postal` is  tibble of all the the postal codes, with the latitude/longitude available possible (geocoded using google maps api).
+-  `sf_clients`  contains the  `clients` left_joined to `geocoded_code_postal`,  
+-  `sf_donateurs`  contains the  `donateurs` left_joined to `geocoded_code_postal`,  
+-  `shp_arrondissements`  is an sf data.frame containing the  shapefile of the 6 arrondissements (neighbourhoods) in Quebec City,  
+-  `shp_secteurs_municipaux`  is an sf data.frame containing the  shapefile of the 69 areas defined in a transportation study in 2017.  It has areas from Quebec city and neighbouring cities    
+-  `isolines`is an sf data.frame containing the shapefile showing the driving times from the store (600 seconds, 1200 seconds, 1800 seconds and 3600 seconds)
+
+
+Some ideas: look at the characeteristics of the neighborhoods  of the clients vs general population using the {cancensus} package.
+
+
+```{r example}
+library(renojouet)
+library(mapview)
+library(leaflet)
+library(tidyverse)
+## basic example code
+```
+
+```{r}
+knitr::kable(clients %>% head(5))
+```
+```{r}
+knitr::kable(donateurs %>% head(5))
+```
+
+
+```{r}
+factpal <- colorFactor(palette = "inferno", domain = isolines$range)
+
+poly_map <- leaflet() %>% 
+  addProviderTiles("CartoDB.Positron", group="Greyscale") %>% 
+  addPolygons(data = isolines , weight = 1, col = ~factpal(range), stroke = TRUE) %>% 
+  addMarkers(data = renojouet_location, popup = "Magasin Réno-Jouets") %>% 
+  addLegend("topleft", data= isolines, pal = factpal, values = ~range,
+            title = "Distance de la boutique<br>(en secondes)",
+            opacity = 0.3) %>%
+  addCircleMarkers(data = sf_clients %>% count(code_postal),
+                   radius = ~ n,
+                   popup = ~ paste0(code_postal, " - ", n, " visites"))
+
+
+
+poly_map
+
+```
+
+
+```{r}
+mapview(shp_secteurs_municipaux)
+```
+
+
+```{r}
+mapview(shp_arrondissements)
+```
+
